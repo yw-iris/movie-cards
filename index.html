@@ -812,7 +812,7 @@ themeBtn.addEventListener('click', e=>{
 /* ================= 开场动画逻辑 ================= */
 (function(){
   const intro = document.getElementById('intro');
-  try{ if (sessionStorage.getItem('aurelia_intro') === '1'){ intro.remove(); return; } sessionStorage.setItem('aurelia_intro','1'); }catch(e){}
+  // 每次进入页面都播放开场动画（不再用 sessionStorage 跳过）
   const bars3d = document.getElementById('bars3d');
   const title = document.getElementById('introTitle');
   const img = document.getElementById('introImg');
