@@ -823,11 +823,10 @@ themeBtn.addEventListener('click', e=>{
   function skip(){ finish(); mark(); }
   intro.addEventListener('click', skip);
 
-  // 时间轴：螺旋文字隧道穿梭 → 定格大标题 → Makima 图 → 揭出主页
-  setTimeout(()=>{ title.classList.add('show'); bars3d.classList.add('fadeout'); }, 3600);
-  setTimeout(()=>{ title.classList.remove('show'); title.classList.add('hide'); }, 5600);
-  setTimeout(()=>{ img.classList.add('show'); }, 6000);
-  setTimeout(reveal, 9000);
+  // 时间轴：螺旋文字隧道穿梭 → Makima 图 → 揭出主页
+  setTimeout(()=>{ bars3d.classList.add('fadeout'); }, 3600);
+  setTimeout(()=>{ img.classList.add('show'); }, 4600);
+  setTimeout(reveal, 7600);
 })();
 
 /* ================= 昼夜切换：巨浪吞没式水波纹 =================
