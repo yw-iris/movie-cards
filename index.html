@@ -198,18 +198,23 @@
     font-family:Georgia,'Times New Roman','Noto Serif SC',serif;
     text-shadow:0 0 1.4vmin rgba(255,70,30,.95), 0 0 5vmin rgba(255,30,10,.6),
       0 0 13vmin rgba(255,22,8,.4); }
-  /* 4 条斜带，错峰 1.75s 依次穿梭：旋转 -24° 定斜度，translate 沿对角线穿过屏幕
+  /* 3 条斜带，左斜/右斜交替，错峰依次穿梭
+     右斜(\)：rotate(24deg)，从左下向右上穿； 左斜(/)：rotate(-24deg)，从右下向左上穿
      fill-mode:both → 延迟等待期间保持 0% 帧（透明），避免未开跑的带子水平裸露 */
-  .band.b0{ top:16%; animation:slash 7s linear infinite both; animation-delay:0s; }
-  .band.b1{ top:39%; animation:slash 7s linear infinite both; animation-delay:1.75s; }
-  .band.b2{ top:62%; animation:slash 7s linear infinite both; animation-delay:3.5s; }
-  .band.b3{ top:85%; animation:slash 7s linear infinite both; animation-delay:5.25s; }
-  .band.b4{ display:none; }
-  @keyframes slash{
-    0%   { opacity:0; transform:rotate(-24deg) translate(-46vw, 40vh); }
+  .band.b0{ top:22%; animation:slashR 7s linear infinite both; animation-delay:0s; }
+  .band.b1{ top:50%; animation:slashL 7s linear infinite both; animation-delay:2.3s; }
+  .band.b2{ top:78%; animation:slashR 7s linear infinite both; animation-delay:4.6s; }
+  .band.b3, .band.b4{ display:none; }
+  @keyframes slashR{   /* 右斜 \ ：左下 → 右上 */
+    0%   { opacity:0; transform:rotate(24deg)  translate(-46vw, 40vh); }
     14%  { opacity:1; }
     86%  { opacity:1; }
-    100% { opacity:0; transform:rotate(-24deg) translate(46vw, -40vh); }
+    100% { opacity:0; transform:rotate(24deg)  translate(46vw, -40vh); } }
+  @keyframes slashL{   /* 左斜 / ：右下 → 左上 */
+    0%   { opacity:0; transform:rotate(-24deg) translate(46vw, 40vh); }
+    14%  { opacity:1; }
+    86%  { opacity:1; }
+    100% { opacity:0; transform:rotate(-24deg) translate(-46vw, -40vh); }
   }
   /* 暗涡 */
   .tunnel-core{ position:absolute; left:50%; top:50%; width:38vmin; height:38vmin;
@@ -789,11 +794,11 @@ themeBtn.addEventListener('click', e=>{
 
   // 生成 14 个文字环：红色发光文字沿环排布，向镜头穿梭，外层缓旋 = 螺旋隧道
   const WORDS_RING = ["AMBITION", "MY TRUE HEART", "NOT WIND AND MOON", "WAIT FOR YOU"];
-  // 斜向依次滑动穿梭：4 条旋转字带，沿对角线错峰穿过屏幕
+  // 斜向依次滑动穿梭：3 条字带，左斜/右斜交替，沿对角线错峰穿过屏幕
   const spin = document.getElementById('tunnelSpin');
   spin.className = 'swirl2d';
   const TEXT = WORDS_RING.join('  •  ') + '  •  ';
-  for (let i = 0; i < 4; i++){
+  for (let i = 0; i < 3; i++){
     const band = document.createElement('div');
     band.className = 'band b' + i;
     const span = document.createElement('span');
