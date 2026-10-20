@@ -204,7 +204,7 @@
     font-weight:600; color:var(--ink); }
   .d-zh{ margin-top:10px; font-size:14px; letter-spacing:.6em; color:var(--ink-soft); }
   .d-desc{ margin:22px auto 0; max-width:36em; font-size:14.5px; line-height:2.05;
-    color:var(--ink-soft); letter-spacing:.06em; padding:0 18px; }
+    color:var(--ink-soft); letter-spacing:.06em; padding:0 18px; white-space:pre-line; }
   .d-hint{ margin-top:26px; font-size:11px; letter-spacing:.4em; color:var(--ink-soft);
     animation:pulse 2.6s ease-in-out infinite; }
   @keyframes pulse{ 0%,100%{ opacity:.45;} 50%{ opacity:1;} }
@@ -343,39 +343,39 @@
 <div id="rippleLayer"></div>
 
 <script>
-/* ================= 数据：8 张电影海报卡 ================= */
+/* ================= 数据：8 张电影海报卡 · 文案取自金山文档《我最真的心 就是我的野心》 ================= */
 const CARDS = [
-  { n:'01', img:'img/p1.jpg', fr:'RESILIENCE', zh:'韧性',
-    line:'Some days thriving, other days just getting out of bed.',
-    desc:'红黑之间的一条斑马线，一个人正在过街。有些日子是向上生长，有些日子只是按时起床——两者都算数，合起来便是生活的节拍。',
+  { n:'01', img:'img/p1.jpg', fr:'RESILIENCE', zh:'野心',
+    line:'我最真的心 就是我的野心',
+    desc:'我最真的心，就是我的野心。',
   },
-  { n:'02', img:'img/p2.jpg', fr:'NO ESCAPE', zh:'无处可逃',
-    line:'Outrun the enemy, wherever he hides.',
-    desc:'仰望两栋楼宇之间的天空，两个身影从红幕上掠过。追逐的从来不是别人，而是那个你一直想甩掉的自己。',
+  { n:'02', img:'img/p2.jpg', fr:'NO ESCAPE', zh:'气息',
+    line:'缠绕留下的痕迹 是你独特的气息',
+    desc:'缠绕留下的痕迹，是你独特的气息。',
   },
-  { n:'03', img:'img/p3.jpg', fr:'VERTIGO', zh:'眩晕',
-    line:'The higher you look, the harder you fall.',
-    desc:'红色的阶梯螺旋而下，白色窗口里的人影俯瞰深渊。希区柯克式的眩晕，是站在高处忽然明白：让你失重的不是高度，是心。',
+  { n:'03', img:'img/p3.jpg', fr:'VERTIGO', zh:'生根',
+    line:'缘分落地生根 是我们',
+    desc:'「缘分落地生根是我们。」',
   },
-  { n:'04', img:'img/p4.jpg', fr:'SE7EN', zh:'七宗罪',
-    line:'What sins haunt the alley tonight?',
-    desc:'仰拍的城市裂缝里，一道血色十字压在两个侦探头上。这座城市藏了七宗罪，而第八宗，是你对它的视而不见。',
+  { n:'04', img:'img/p4.jpg', fr:'SE7EN', zh:'爱意',
+    line:'獠牙注入的是致死的「爱意」',
+    desc:'獠牙注入的，是致死的「爱意」。',
   },
-  { n:'05', img:'img/p5.jpg', fr:'GIA', zh:'吉娅',
-    line:'This is life, not heaven — you don\'t have to be perfect.',
-    desc:'巨大的红色字母压下来，黑白面孔从字缝里望出去。这是生活，不是天堂——你不必完美，就已经足够醒目。',
+  { n:'05', img:'img/p5.jpg', fr:'GIA', zh:'情书',
+    line:'以你为名 编写一封情书',
+    desc:'· 以你为名，编写一封情书 ·—— 陵烟',
   },
-  { n:'06', img:'img/p6.jpg', fr:'DR. STRANGELOVE', zh:'奇爱博士',
-    line:'How I learned to stop worrying and love the bomb.',
-    desc:'骑在炸弹上落下的女人，电话线缠绕着整个世界。库布里克的黑色幽默：末日不可怕，可怕的是我们笑着按下按钮。',
+  { n:'06', img:'img/p6.jpg', fr:'DR. STRANGELOVE', zh:'风月',
+    line:"It's not about wind and moon, I'll mention the order and wait for you to respond",
+    desc:"It's not about wind and moon,\nI'll mention the order and wait for you to respond.",
   },
-  { n:'07', img:'img/p7.jpg', fr:'THE COMMUTER', zh:'通勤者',
-    line:'They\'re watching every move you make.',
-    desc:'巨大的标题斜插下来，铁轨尽头一个提包的身影。每天同一条线路、同一班车——直到某天，车厢里多了一个注视你的人。',
+  { n:'07', img:'img/p7.jpg', fr:'THE COMMUTER', zh:'杳信',
+    line:'今夜我们彻夜长谈 明天 你会不会杳无音信',
+    desc:'今夜我们彻夜长谈，明天，你会不会杳无音信。',
   },
-  { n:'08', img:'img/p8.jpg', fr:'WEST SIDE STORY', zh:'西区故事',
-    line:'Could there be a love, against the streets?',
-    desc:'红墙前的一个黑色剪影，影子长过整条街。街头是刀与帮派，巷尾是歌与爱情——西区的故事，从未落幕。',
+  { n:'08', img:'img/p8.jpg', fr:'WEST SIDE STORY', zh:'泪珠',
+    line:'是你吻开笔墨 染我眼角泪珠',
+    desc:'是你吻开笔墨，染我眼角泪珠。—— 陵烟',
   },
 ];
 
