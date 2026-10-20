@@ -790,16 +790,16 @@ themeBtn.addEventListener('click', e=>{
   // 生成 14 个文字环：红色发光文字沿环排布，向镜头穿梭，外层缓旋 = 螺旋隧道
   const WORDS_RING = ["AMBITION", "MY TRUE HEART", "NOT WIND AND MOON", "WAIT FOR YOU"];
   const spin = document.getElementById('tunnelSpin');
-  const N_RINGS = 14, RING_STEP = 16;      // 环数与 Z 间距(vmin)
+  const N_RINGS = 8, RING_STEP = 16;      // 环数与 Z 间距(vmin)
   for (let i = 0; i < N_RINGS; i++){
     const ring = document.createElement('div');
     ring.className = 'ring';
     ring.style.setProperty('--rd', (-(i / N_RINGS) * 4.2) + 's');   // 负延迟错相位，形成连续隧道
     const rot = (i * 137) % 360;                                     // 每环自转相位 → 螺旋感
-    for (let k = 0; k < 9; k++){
+    for (let k = 0; k < 4; k++){                                    // 每环仅 4 段文字，间隔 90°
       const b = document.createElement('b');
-      b.textContent = WORDS_RING[k % WORDS_RING.length];
-      b.style.transform = `rotate(${rot + k * 40}deg) translate(24vmin)`;
+      b.textContent = WORDS_RING[i % WORDS_RING.length];
+      b.style.transform = `rotate(${rot + k * 90}deg) translate(24vmin)`;
       ring.appendChild(b);
     }
     spin.appendChild(ring);
