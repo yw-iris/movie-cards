@@ -185,33 +185,24 @@
     background:radial-gradient(75% 70% at 50% 50%, transparent 55%, rgba(0,0,0,.82) 100%); }
   #intro.gone{ visibility:hidden; }
 
-  /* 3D 螺旋文字隧道：黑底，红色发光文字环沿隧道穿梭，整体缓旋（复刻 LED 舞台视频） */
-  .bars3d{ position:absolute; inset:0; perspective:44vmin; perspective-origin:50% 50%;
-    overflow:hidden; }
+  /* 螺旋字带漩涡：文字沿阿基米德螺线摆放并随切线旋转 → 连成弯曲字带，整体匀速旋转吸入 */
+  .bars3d{ position:absolute; inset:0; overflow:hidden; }
   .bars3d.fadeout{ animation:barsOut 1.1s var(--ease) forwards; }
-  @keyframes barsOut{ to{ opacity:0; transform:scale(1.4); filter:blur(8px);} }
-
-  /* 漩涡：每环单段文字，角度沿深度连续递增 = 螺旋臂；半径随深度收缩向中心吸入 */
-  .tunnel-spin{ position:absolute; left:50%; top:50%; width:0; height:0;
-    transform-style:preserve-3d; animation:spinZ 9s linear infinite; }
-  @keyframes spinZ{ from{ transform:rotateZ(0deg);} to{ transform:rotateZ(-360deg);} }
-  .ring{ position:absolute; left:0; top:0; width:0; height:0;
-    transform-style:preserve-3d; will-change:transform;
-    animation:swirl 4.2s linear infinite; animation-delay:var(--rd,0s); }
-  @keyframes swirl{
-    0%{ transform:translateZ(-230vmin) rotate(var(--arm)); opacity:0; }
-    14%{ opacity:1; }
-    100%{ transform:translateZ(30vmin) rotate(calc(var(--arm) + 220deg)); opacity:0; } }
-  .ring b{ position:absolute; left:0; top:-4vmin; transform-origin:0 4vmin;
-    font-weight:900; font-size:8vmin; white-space:nowrap; color:#ff2d18;
-    font-family:'Arial Black','Helvetica Neue','Noto Sans SC',sans-serif;
-    text-shadow:0 0 1.4vmin rgba(255,70,30,1), 0 0 5vmin rgba(255,34,12,.75),
-      0 0 14vmin rgba(255,22,8,.5); }
+  @keyframes barsOut{ to{ opacity:0; transform:scale(1.25); filter:blur(7px);} }
+  .swirl2d{ position:absolute; left:50%; top:50%; width:0; height:0; z-index:5;
+    animation:vortexSpin 13s linear infinite; }
+  @keyframes vortexSpin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+  .swirl2d b{ position:absolute; left:0; top:0; font-weight:700; font-size:6.5vmin;
+    white-space:nowrap; color:#ff2313; line-height:1;
+    font-family:Georgia,'Times New Roman','Noto Serif SC',serif;
+    text-shadow:0 0 1.4vmin rgba(255,70,30,.95), 0 0 5vmin rgba(255,30,10,.6),
+      0 0 13vmin rgba(255,22,8,.4);
+    will-change:transform; }
   /* 隧道中心暗涡 */
-  .tunnel-core{ position:absolute; left:50%; top:50%; width:34vmin; height:34vmin;
+  .tunnel-core{ position:absolute; left:50%; top:50%; width:38vmin; height:38vmin;
     transform:translate(-50%,-50%); border-radius:50%;
     background:radial-gradient(50% 50%, #000 0%, #000 55%, transparent 78%);
-    box-shadow:0 0 18vmin 6vmin #000; z-index:3; }
+    box-shadow:0 0 20vmin 8vmin #000; z-index:6; }
 
   /* 收尾大标题 */
   .intro-title{ position:absolute; left:50%; top:40%; transform:translate(-50%,-50%);
@@ -790,21 +781,25 @@ themeBtn.addEventListener('click', e=>{
 
   // 生成 14 个文字环：红色发光文字沿环排布，向镜头穿梭，外层缓旋 = 螺旋隧道
   const WORDS_RING = ["AMBITION", "MY TRUE HEART", "NOT WIND AND MOON", "WAIT FOR YOU"];
+  // 弯曲字带漩涡：同心弧形字带（词沿切线弯曲），每环词数按周长分配，双层错位填满，整体匀速旋转
   const spin = document.getElementById('tunnelSpin');
-  const N_RINGS = 14;                          // 环数
-  for (let i = 0; i < N_RINGS; i++){
-    const ring = document.createElement('div');
-    ring.className = 'ring';
-    ring.style.setProperty('--rd', (-(i / N_RINGS) * 4.2) + 's');   // 负延迟错相位，连续漩涡流
-    const arm = (i * 40) % 360;                                     // 螺旋臂角度：每环递增 40°
-    ring.style.setProperty('--arm', arm + 'deg');
-    const radius = 30 - (i / N_RINGS) * 14;                         // 半径从外环到内环收缩，向中心吸入
-    const b = document.createElement('b');
-    b.textContent = WORDS_RING[i % WORDS_RING.length];
-    b.style.transform = `translate(${radius}vmin)`;
-    ring.appendChild(b);
-    spin.appendChild(ring);
-  }
+  spin.className = 'swirl2d';
+  const RADII = [14, 23, 32, 41, 50, 60, 70, 80];
+  RADII.forEach((r, i)=>{
+    const n = Math.max(2, Math.round((2 * Math.PI * r) / 58));   // 词均长约 58vmin
+    for (let layer = 0; layer < 2; layer++){
+      const off = i * 26 + layer * (180 / n);                     // 双层错位 → 字带连贯
+      for (let k = 0; k < n; k++){
+        const th = off + k * (360 / n);
+        const pool = r < 26 ? ['AMBITION', 'WAIT FOR YOU'] : WORDS_RING;   // 内圈用短词
+        const b = document.createElement('b');
+        b.textContent = pool[(k + layer) % pool.length];
+        b.style.transform =
+          `translate(-50%,-50%) rotate(${th}deg) translate(${r}vmin) rotate(90deg)`;
+        spin.appendChild(b);
+      }
+    }
+  });
 
   let done = false;
   function finish(){
