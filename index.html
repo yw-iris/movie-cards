@@ -256,6 +256,15 @@
     .intro-img img{ width:100%; height:100%; object-fit:cover;
       filter:brightness(1.25) saturate(1.05); }
   }
+  /* 圆滑揭出：开场整体淡出，图片轻微放大+模糊，里页同步淡入上浮（交叉过渡） */
+  #intro.reveal{ pointer-events:none; animation:introOut 1.4s var(--ease) forwards; }
+  @keyframes introOut{ from{ opacity:1; } to{ opacity:0; } }
+  #intro.reveal .intro-img img{ animation:imgOut 1.4s var(--ease) forwards; }
+  @keyframes imgOut{
+    to{ transform:scale(1.14); filter:brightness(1.25) saturate(1.05) blur(3px); } }
+  #home{ opacity:0; transform:scale(.985);
+    transition:opacity 1s ease, transform 1.1s cubic-bezier(.22,.61,.36,1); }
+  #home.arrive{ opacity:1; transform:none; }
 
   /* 手机端卡牌：触摸悬停与桌面一致 */
   @media (hover:none){
@@ -808,8 +817,13 @@ themeBtn.addEventListener('click', e=>{
   }
 
   let done = false;
+  function showHome(){
+    const home = document.getElementById('home');
+    if (home) home.classList.add('arrive');   // 里页淡入上浮
+  }
   function finish(){
     if (done) return; done = true;
+    showHome();
     intro.classList.add('gone');
     setTimeout(()=> intro.remove(), 100);
   }
@@ -819,7 +833,8 @@ themeBtn.addEventListener('click', e=>{
   function reveal(){
     if (done) return; done = true; mark();
     intro.classList.add('reveal');
-    setTimeout(()=> intro.remove(), 1000);
+    showHome();   // 里页同步淡入上浮，形成圆滑交叉过渡
+    setTimeout(()=> intro.remove(), 1500);
   }
 
   function skip(){ finish(); mark(); }
