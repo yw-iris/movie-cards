@@ -175,6 +175,65 @@
     transition:opacity .4s; white-space:nowrap; padding:6px 10px 6px 16px; }
   .spread-hint:hover{ opacity:1; }
 
+  /* ============ 开场动画：红底黑字 3D 长条 + 镜像倒影 ============ */
+  #intro{ position:fixed; inset:0; z-index:100; overflow:hidden;
+    background:radial-gradient(140% 100% at 50% 40%, #c21618 0%, #a80f13 55%, #7d0a0e 100%);
+    cursor:pointer; }
+  #intro.gone{ visibility:hidden; }
+  .bar-strip{ position:absolute; top:-12%; bottom:-12%; left:-200vmax; width:600vmax;
+    pointer-events:none; }
+  .bar-row{ position:absolute; left:0; width:100%; display:flex; flex-direction:column;
+    align-items:flex-start; will-change:transform; }
+  .bar-row .run{ display:flex; gap:6vmin; padding-right:6vmin; white-space:nowrap;
+    font-weight:800; font-style:italic; font-size:8.6vmin; letter-spacing:.06em;
+    color:#15060a; text-shadow:0.35vmin 0.55vmin 0 rgba(0,0,0,.28); }
+  .bar-row .run span{ flex:none; }
+  /* 镜面倒影 */
+  .mirror{ transform:scaleY(-1); opacity:.22; margin-top:-1vmin;
+    -webkit-mask-image:linear-gradient(180deg, rgba(0,0,0,.9), transparent 78%);
+            mask-image:linear-gradient(180deg, rgba(0,0,0,.9), transparent 78%);
+    filter:blur(1.5px); }
+  .bar-row .run{ animation:scrollL var(--sp,26s) linear infinite; }
+  .bar-row.rev .run{ animation-name:scrollR; }
+  @keyframes scrollL{ from{ transform:translateX(0);} to{ transform:translateX(-50%);} }
+  @keyframes scrollR{ from{ transform:translateX(-50%);} to{ transform:translateX(0);} }
+  /* 整组轻微斜切，模拟 3D 透视 */
+  .bars3d{ position:absolute; inset:-30% -20%; transform:rotateX(38deg) rotateZ(-7deg) scale(1.35);
+    transform-origin:50% 60%; }
+  .bars3d.fadeout{ animation:barsOut 1.1s var(--ease) forwards; }
+  @keyframes barsOut{ to{ opacity:0; transform:rotateX(20deg) rotateZ(-4deg) scale(2.1);} }
+
+  /* 收尾大标题（带倒影） */
+  .intro-title{ position:absolute; left:50%; top:44%; transform:translate(-50%,-50%);
+    text-align:center; opacity:0; }
+  .intro-title.show{ animation:titleIn .9s var(--ease) forwards; }
+  @keyframes titleIn{ from{ opacity:0; transform:translate(-50%,-30%) scale(.92);}
+                      to{ opacity:1; transform:translate(-50%,-50%) scale(1);} }
+  .intro-title.hide{ animation:titleOut .5s ease forwards; }
+  @keyframes titleOut{ to{ opacity:0; transform:translate(-50%,-58%) scale(1.04);} }
+  .intro-title .big{ font-weight:800; font-style:italic; font-size:clamp(54px,13vmin,120px);
+    letter-spacing:.08em; color:#15060a; text-shadow:0.5vmin 0.8vmin 0 rgba(0,0,0,.3); }
+  .intro-title .sub{ margin-top:1.4vmin; font-size:clamp(12px,2.2vmin,20px); letter-spacing:.6em;
+    color:rgba(21,6,10,.75); font-family:'Noto Serif SC', serif; }
+  .intro-title .ref{ transform:scaleY(-1); opacity:.18; margin-top:.6vmin;
+    -webkit-mask-image:linear-gradient(180deg, rgba(0,0,0,.85), transparent 80%);
+            mask-image:linear-gradient(180deg, rgba(0,0,0,.85), transparent 80%);
+    filter:blur(2px); }
+  .intro-title .ref .big{ font-size:clamp(54px,13vmin,120px); }
+
+  /* Makima 图幕 */
+  .intro-img{ position:absolute; inset:0; display:grid; place-items:center;
+    opacity:0; background:#8c0d10; }
+  .intro-img.show{ animation:imgIn 1s ease forwards; }
+  @keyframes imgIn{ to{ opacity:1; } }
+  .intro-img img{ width:auto; height:min(96vh, 118vw); aspect-ratio:877/1100; object-fit:cover;
+    border-radius:6px; box-shadow:0 30px 90px rgba(0,0,0,.55);
+    animation:zoomSlow 7s ease-out forwards; }
+  @keyframes zoomSlow{ from{ transform:scale(1);} to{ transform:scale(1.07);} }
+  #intro.reveal{ transition:opacity .9s ease; opacity:0; }
+  .skip-hint{ position:absolute; bottom:4%; right:5%; font-size:11px; letter-spacing:.4em;
+    color:rgba(255,235,225,.55); animation:pulse 2.4s ease-in-out infinite; }
+
   /* ---------- 详情页 ---------- */
   #detail{ display:grid; place-items:center; visibility:hidden; opacity:0; }
   #detail.show{ visibility:visible; opacity:1; }
@@ -341,6 +400,20 @@
 </section>
 
 <div id="rippleLayer"></div>
+
+<!-- ============ 开场动画 ============ -->
+<div id="intro">
+  <div class="bars3d" id="bars3d"></div>
+  <div class="intro-title" id="introTitle">
+    <div class="big">AURELIA</div>
+    <div class="sub">影 之 牌 阵</div>
+    <div class="ref"><div class="big">AURELIA</div></div>
+  </div>
+  <div class="intro-img" id="introImg">
+    <img src="img/makima.jpg" alt="Makima">
+  </div>
+  <div class="skip-hint">点 击 跳 过</div>
+</div>
 
 <script>
 /* ================= 数据：8 张电影海报卡 · 文案严格取自金山文档《我最真的心 就是我的野心》原文 ================= */
@@ -643,6 +716,49 @@ themeBtn.addEventListener('click', e=>{
   const cx = r.left + r.width/2, cy = r.top + r.height/2;
   themeWipe(cx, cy, document.body.dataset.theme === 'day' ? 'night' : 'day');
 });
+
+/* ================= 开场动画逻辑 ================= */
+(function(){
+  const intro = document.getElementById('intro');
+  const bars3d = document.getElementById('bars3d');
+  const title = document.getElementById('introTitle');
+  const img = document.getElementById('introImg');
+  const WORDS = ['AURELIA', '影之牌阵', 'MOVIE POSTER CARDS', '我最真的心 就是我的野心', 'AURELIA', '影之牌阵', 'MOVIE POSTER CARDS', '我最真的心 就是我的野心'];
+
+  // 生成 8 条文字长条（含镜像倒影）
+  for (let i = 0; i < 8; i++){
+    const row = document.createElement('div');
+    row.className = 'bar-row' + (i % 2 ? ' rev' : '');
+    row.style.top = (i * 13) + '%';
+    row.style.setProperty('--sp', (16 + i * 3.2) + 's');
+    const txt = WORDS[i % WORDS.length];
+    const run = '<div class="run">' + Array(4).fill(`<span>${txt}</span>`).join('') + '</div>';
+    row.innerHTML = run + `<div class="mirror bar-row2">${run}</div>`;
+    bars3d.appendChild(row);
+  }
+
+  let done = false;
+  function finish(){
+    if (done) return; done = true;
+    intro.classList.add('gone');
+    setTimeout(()=> intro.remove(), 100);
+  }
+  function reveal(){
+    if (done) return; done = true;
+    intro.classList.add('reveal');
+    setTimeout(()=> intro.remove(), 1000);
+  }
+
+  function skip(){ finish(); }
+  intro.addEventListener('click', skip);
+
+  // 时间轴：长条滚动 → 定格大标题 → Makima 图 → 揭出主页
+  setTimeout(()=> title.classList.add('show'), 3400);
+  setTimeout(()=> bars3d.classList.add('fadeout'), 3400);
+  setTimeout(()=> img.classList.add('show'), 5200);
+  setTimeout(()=>{ title.classList.remove('show'); title.classList.add('hide'); }, 5400);
+  setTimeout(reveal, 8200);          // 图片淡出，揭出牌阵主页
+})();
 
 /* ================= 昼夜切换：巨浪吞没式水波纹 =================
    与视频一致：一个边缘持续抖动（水波纹）的巨型圆盘从按钮处涌出，
