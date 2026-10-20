@@ -276,10 +276,11 @@
     color:rgba(255,235,225,.55); animation:pulse 2.4s ease-in-out infinite; }
 
   /* ---------- 详情页 ---------- */
-  #detail{ display:grid; place-items:center; visibility:hidden; opacity:0; }
+  #detail{ display:grid; place-items:center; visibility:hidden; opacity:0;
+    overflow-y:auto; padding:5vmin 0; }
   #detail.show{ visibility:visible; opacity:1; }
   #detail > .stage{ position:relative; width:min(92vmin,640px); text-align:center;
-    transform:translateY(-2vmin); }
+    transform:translateY(-2vmin); max-height:none; }
   .arch{ width:100%; color:var(--line); opacity:.9; }
   .arch-wrap{ position:absolute; inset:-9% -4% auto -4%; pointer-events:none; }
 
@@ -305,7 +306,16 @@
   .d-zh{ margin-top:10px; font-size:14px; letter-spacing:.6em; color:var(--ink-soft); }
   .d-desc{ margin:22px auto 0; max-width:36em; font-size:14.5px; line-height:2.05;
     color:var(--ink-soft); letter-spacing:.06em; padding:0 18px; white-space:pre-line; }
-  .d-hint{ margin-top:26px; font-size:11px; letter-spacing:.4em; color:var(--ink-soft);
+  .d-modules{ margin:24px auto 0; max-width:38em; padding:0 18px; text-align:left; }
+  .d-mod{ margin-top:20px; padding-top:14px; border-top:1px solid rgba(180,150,110,.22); }
+  .d-mod:first-child{ margin-top:8px; }
+  .d-mod-t{ font-size:12.5px; letter-spacing:.42em; color:var(--accent, #c8503a);
+    font-weight:600; margin-bottom:10px; }
+  .d-mod-i{ font-size:13.5px; line-height:1.95; letter-spacing:.04em;
+    color:var(--ink-soft); padding-left:1.1em; position:relative; }
+  .d-mod-i::before{ content:""; position:absolute; left:0; top:.85em;
+    width:4px; height:4px; border-radius:50%; background:rgba(200,80,58,.7); }
+  .d-hint{ margin-top:30px; font-size:11px; letter-spacing:.4em; color:var(--ink-soft);
     animation:pulse 2.6s ease-in-out infinite; }
   @keyframes pulse{ 0%,100%{ opacity:.45;} 50%{ opacity:1;} }
 
@@ -437,6 +447,7 @@
     <div class="d-name" id="dName">LE MAT</div>
     <div class="d-zh"   id="dZh">愚 者</div>
     <p class="d-desc"   id="dDesc"></p>
+    <div class="d-modules" id="dModules"></div>
     <div class="d-hint">再 点 击 一 次 · 回 到 首 页</div>
   </div>
 </section>
@@ -466,34 +477,91 @@ const CARDS = [
   { n:'01', img:'img/p1.jpg', fr:'RESILIENCE', zh:'生根',
     line:'「 缘 分 落 地 生 根 是 我 们 ‵ 」',
     desc:'「 缘 分 落 地 生 根 是 我 们 ‵ 」',
+    modules:[
+      { t:'关于我', items:[
+        'Understand me',
+        '个人留言小提示：',
+        '｜缓缓飘落的枫叶像思念 人生那么短 喜欢就应该相互纠缠｜',
+        '「 缘 分 落 地 生 根 是 我 们 ‵ 」',
+        'ᝰ',
+      ]},
+    ],
   },
   { n:'02', img:'img/p2.jpg', fr:'NO ESCAPE', zh:'气息',
     line:'缠绕留下的痕迹 是你独特的气息',
     desc:'缠绕留下的痕迹 是你独特的气息',
+    modules:[
+      { t:'个人信息', items:[
+        '19 INTP 天蝎座 双',
+        '【低无】 【高压】 【高逻辑】 【文艺】',
+        '【sub】 【下位狗】 【dom】',
+      ]},
+    ],
   },
   { n:'03', img:'img/p3.jpg', fr:'VERTIGO', zh:'风月',
     line:'It\'s not about wind and moon,',
     desc:'It\'s not about wind and moon,',
+    modules:[
+      { t:'雪 · 思念', items:[
+        '𝔊𝔩𝔞𝔰𝔰 𝔢𝔶𝔢𝔰 𝔥𝔦𝔡𝔢 𝔞 𝔰𝔫𝔬𝔴 𝔱𝔥𝔞𝔱 𝔴𝔦𝔩𝔩 𝔫𝔢𝔳𝔢𝔯 𝔪𝔢𝔩𝔱',
+        '我无形的思念化成雪花 替我轻抚你眉眼',
+      ]},
+    ],
   },
   { n:'04', img:'img/p4.jpg', fr:'SE7EN', zh:'爱意',
     line:'獠 ̶ 牙  注  ̲  ͞入 的 ̶   ̲是 致死 ͞ 的 ̶  「爱意」',
     desc:'獠 ̶ 牙  注  ̲  ͞入 的 ̶   ̲是 致死 ͞ 的 ̶  「爱意」',
+    modules:[
+      { t:'话术展示', items:[
+        '@这首歌写给you: 你不是凌冽寒雪 你是我世世的长春',
+      ]},
+    ],
   },
   { n:'05', img:'img/p5.jpg', fr:'GIA', zh:'情书',
     line:'· 以你为名，编写一封情书',
     desc:'· 以你为名，编写一封情书',
+    modules:[
+      { t:'情书', items:[
+        '· 以你为名，编写一封情书',
+        '<陵烟>',
+      ]},
+    ],
   },
   { n:'06', img:'img/p6.jpg', fr:'DR. STRANGELOVE', zh:'杳信',
     line:'今夜我们彻夜长谈 明天 你会不会杳无音信',
     desc:'今夜我们彻夜长谈 明天 你会不会杳无音信',
+    modules:[
+      { t:'单前须知', items:[
+        '× 10min 不满可退换',
+        '× 安全词「我觉得还是离开你为好」',
+        '× 婉拒不在意 纯娱乐',
+        '× 我们的时间是宝贵的 请慎重',
+        '× 选择下位 / 伪高 / 微剖析文艺 随机掉落',
+        '× 拼刺刀请提前示意 · 新手单纯的老板慎选 我容易调戏你',
+        '× 仅支持先付后陪',
+      ]},
+    ],
   },
   { n:'07', img:'img/p7.jpg', fr:'THE COMMUTER', zh:'回应',
     line:'I\'ll mention the order and wait for you to respond',
     desc:'I\'ll mention the order and wait for you to respond',
+    modules:[
+      { t:'序 · 信条', items:[
+        '缠绕留下的痕迹 是你独特的气息',
+        'It\'s not about wind and moon,',
+        "I'll mention the order and wait for you to respond",
+        '今夜我们彻夜长谈 明天 你会不会杳无音信',
+      ]},
+    ],
   },
   { n:'08', img:'img/p8.jpg', fr:'WEST SIDE STORY', zh:'泪珠',
     line:'是你吻开笔墨，染我眼角泪珠  ·',
     desc:'是你吻开笔墨，染我眼角泪珠  ·',
+    modules:[
+      { t:'泪珠', items:[
+        '<陵烟> 是你吻开笔墨，染我眼角泪珠',
+      ]},
+    ],
   },
 ];
 
@@ -695,6 +763,7 @@ showCaption(0);
 /* ================= 详情页 ================= */
 const dNum=document.getElementById('dNum'), dName=document.getElementById('dName'),
       dZh=document.getElementById('dZh'), dDesc=document.getElementById('dDesc'),
+      dModules=document.getElementById('dModules'),
       bigCard=document.getElementById('bigCard'),
       detail=document.getElementById('detail'), home=document.getElementById('home');
 let current = -1, busy = false;
@@ -706,6 +775,25 @@ function fillDetail(i){
   dName.textContent = c.fr;
   dZh.textContent = c.zh.split('').join(' ');
   dDesc.textContent = c.desc;
+  // 模块化详情（如 08 泪珠的人设资料）；无模块时清空
+  dModules.innerHTML = '';
+  (c.modules || []).forEach(m=>{
+    const blk = document.createElement('div');
+    blk.className = 'd-mod';
+    const h = document.createElement('div');
+    h.className = 'd-mod-t';
+    h.textContent = m.t;
+    blk.appendChild(h);
+    m.items.forEach(it=>{
+      const p = document.createElement('div');
+      p.className = 'd-mod-i';
+      p.textContent = it;
+      blk.appendChild(p);
+    });
+    dModules.appendChild(blk);
+  });
+  // 内容长短不一，重置滚动位置
+  detail.scrollTop = 0;
 }
 
 /* ================= 水波纹转场 ================= */
