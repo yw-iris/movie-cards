@@ -198,12 +198,12 @@
     font-family:Georgia,'Times New Roman','Noto Serif SC',serif;
     text-shadow:0 0 1.4vmin rgba(255,70,30,.95), 0 0 5vmin rgba(255,30,10,.6),
       0 0 13vmin rgba(255,22,8,.4); }
-  /* 3 条斜带，左斜/右斜交替，错峰依次穿梭
+  /* 3 条斜带，左斜/右斜交替，错峰依次穿梭（间隔收紧，三条都会露面）
      右斜(\)：rotate(24deg)，从左下向右上穿； 左斜(/)：rotate(-24deg)，从右下向左上穿
      fill-mode:both → 延迟等待期间保持 0% 帧（透明），避免未开跑的带子水平裸露 */
   .band.b0{ top:22%; animation:slashR 7s linear infinite both; animation-delay:0s; }
-  .band.b1{ top:50%; animation:slashL 7s linear infinite both; animation-delay:2.3s; }
-  .band.b2{ top:78%; animation:slashR 7s linear infinite both; animation-delay:4.6s; }
+  .band.b1{ top:50%; animation:slashL 7s linear infinite both; animation-delay:0.9s; }
+  .band.b2{ top:78%; animation:slashR 7s linear infinite both; animation-delay:1.8s; }
   .band.b3, .band.b4{ display:none; }
   @keyframes slashR{   /* 右斜 \ ：左下 → 右上 */
     0%   { opacity:0; transform:rotate(24deg)  translate(-46vw, 40vh); }
@@ -825,10 +825,10 @@ themeBtn.addEventListener('click', e=>{
   function skip(){ finish(); mark(); }
   intro.addEventListener('click', skip);
 
-  // 时间轴：螺旋文字隧道穿梭 → Makima 图 → 揭出主页
-  setTimeout(()=>{ bars3d.classList.add('fadeout'); }, 3600);
-  setTimeout(()=>{ img.classList.add('show'); }, 4600);
-  setTimeout(reveal, 7600);
+  // 时间轴：斜带依次穿梭（三条都露面）→ Makima 图 → 揭出主页
+  setTimeout(()=>{ bars3d.classList.add('fadeout'); }, 4200);
+  setTimeout(()=>{ img.classList.add('show'); }, 5200);
+  setTimeout(reveal, 8200);
 })();
 
 /* ================= 昼夜切换：巨浪吞没式水波纹 =================
