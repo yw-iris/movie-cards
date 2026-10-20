@@ -353,6 +353,7 @@
 
   <div class="corner-note">
     <b>影 之 牌 阵 · 全 八 张</b>
+    <span id="replayIntro" style="display:block;cursor:pointer;text-decoration:underline;text-underline-offset:3px">↺ 重播开场动画</span>
     点击中央 · 展开牌阵 / 收拢<br>
     点击卡牌 · 进入它的页面<br>
     再次点击 · 回到这片天空
@@ -558,6 +559,12 @@ CARDS.forEach((c, i)=>{
 const slots = [...document.querySelectorAll('.slot')];
 const fan = document.querySelector('.fan');
 
+document.getElementById('replayIntro').addEventListener('click', e=>{
+  e.stopPropagation();
+  try{ sessionStorage.removeItem('aurelia_intro'); }catch(err){}
+  location.reload();
+});
+
 /* ================= 布局：宽弧铺开（视频默认） / 紧凑扇形（收拢） ================= */
 const fanHotspot = document.getElementById('fanHotspot');
 const spreadHint = document.getElementById('spreadHint');
@@ -720,6 +727,7 @@ themeBtn.addEventListener('click', e=>{
 /* ================= 开场动画逻辑 ================= */
 (function(){
   const intro = document.getElementById('intro');
+  try{ if (sessionStorage.getItem('aurelia_intro') === '1'){ intro.remove(); return; } sessionStorage.setItem('aurelia_intro','1'); }catch(e){}
   const bars3d = document.getElementById('bars3d');
   const title = document.getElementById('introTitle');
   const img = document.getElementById('introImg');
@@ -743,13 +751,16 @@ themeBtn.addEventListener('click', e=>{
     intro.classList.add('gone');
     setTimeout(()=> intro.remove(), 100);
   }
+  function mark(){
+    try{ sessionStorage.setItem('aurelia_intro','1'); }catch(e){}
+  }
   function reveal(){
-    if (done) return; done = true;
+    if (done) return; done = true; mark();
     intro.classList.add('reveal');
     setTimeout(()=> intro.remove(), 1000);
   }
 
-  function skip(){ finish(); }
+  function skip(){ finish(); mark(); }
   intro.addEventListener('click', skip);
 
   // 时间轴：长条滚动 → 定格大标题 → Makima 图 → 揭出主页
