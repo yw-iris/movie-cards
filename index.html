@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURELIA · 星章塔罗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+SC:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fan-angle: 9deg;          /* 相邻卡牌夹角 */
+    --radius: clamp(200px, 44vmin, 370px);
+    --card-w: clamp(78px, 13vmin, 126px);
+    --ease: cubic-bezier(.22,.9,.3,1);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; overflow:hidden; }
+  body{
+    font-family:'Cormorant Garamond','Noto Serif SC',Georgia,'Songti SC',serif;
+    cursor:default;
+    -webkit-font-smoothing:antialiased;
+    transition:background 1s var(--ease);
+  }
+  body[data-theme="day"]{
+    --bg1:#e7dfcc; --bg2:#d8cdb2; --bg3:#cfc2a4;
+    --ink:#4d4335; --ink-soft:#7a6f5c; --line:rgba(77,67,53,.55);
+    --card-bg:#efe8d6; --card-edge:#6b5f4c;
+    --glow:rgba(255,250,235,.85);
+  }
+  body[data-theme="night"]{
+    --bg1:#141824; --bg2:#0e111b; --bg3:#090b12;
+    --ink:#cfc3a4; --ink-soft:#8d8471; --line:rgba(207,195,164,.4);
+    --card-bg:#1d2130; --card-edge:#a99b78;
+    --glow:rgba(180,190,230,.35);
+  }
+
+  /* ---------- 背景层 ---------- */
+  #bg{ position:fixed; inset:0; z-index:0; overflow:hidden;
+       background:
+         radial-gradient(120vmax 80vmax at 50% 118%, var(--glow) 0%, transparent 55%),
+         radial-gradient(90vmax 60vmax at 15% -10%, var(--bg1) 0%, transparent 60%),
+         radial-gradient(90vmax 60vmax at 85% -10%, var(--bg1) 0%, transparent 60%),
+         linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 52%, var(--bg3) 100%);
+       transition:background 1s var(--ease); }
+  #bg::after{ /* 噪点 */
+    content:""; position:absolute; inset:0; opacity:.05; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");
+  }
+  .vignette{ position:fixed; inset:0; z-index:2; pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 42%, transparent 55%, rgba(0,0,0,.22) 100%); }
+
+  .cloud{ position:absolute; border-radius:50%;
+    background:radial-gradient(closest-side, var(--glow), transparent 70%);
+    filter:blur(6px); opacity:.5; animation:drift 46s linear infinite alternate; }
+  .cloud.c1{ width:46vmax; height:16vmax; top:6%;  left:-8%; }
+  .cloud.c2{ width:36vmax; height:13vmax; top:20%; right:-10%; animation-duration:58s; animation-delay:-20s; }
+  .cloud.c3{ width:52vmax; height:18vmax; bottom:4%; left:12%;  animation-duration:70s; animation-delay:-40s; opacity:.35;}
+  @keyframes drift{ from{ transform:translateX(-3vmax);} to{ transform:translateX(4vmax);} }
+
+  /* ---------- 顶栏 ---------- */
+  header{ position:fixed; top:0; left:0; right:0; z-index:20;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:26px 34px; pointer-events:none; }
+  .brand{ pointer-events:auto; }
+  .brand h1{ font-size:clamp(22px,3.4vmin,30px); font-weight:600; letter-spacing:.32em;
+    color:var(--ink); }
+  .brand p{ margin-top:4px; font-size:11px; letter-spacing:.28em; color:var(--ink-soft);
+    font-style:italic; }
+  .brand p::before{ content:""; display:inline-block; width:34px; height:1px;
+    background:var(--line); vertical-align:middle; margin-right:10px; }
+  #themeBtn{ pointer-events:auto; width:42px; height:42px; border-radius:50%;
+    border:1px solid var(--line); background:transparent; color:var(--ink);
+    cursor:pointer; display:grid; place-items:center; transition:transform .4s var(--ease), border-color .4s; }
+  #themeBtn:hover{ transform:rotate(30deg) scale(1.08); }
+  #themeBtn svg{ width:20px; height:20px; }
+
+  /* ---------- 首页 ---------- */
+  .view{ position:fixed; inset:0; z-index:5; }
+  #home{ display:flex; flex-direction:column; align-items:center; }
+
+  .fan{ position:absolute; top:36%; left:50%; width:0; height:0; }
+  .fan-sway{ position:absolute; transform-origin:50% 0; animation:sway 7s ease-in-out infinite; }
+  @keyframes sway{ 0%,100%{ transform:rotate(-.7deg);} 50%{ transform:rotate(.7deg);} }
+
+  /* 首页大拱门剪影（复现视频背景） */
+  .home-arch{ position:fixed; top:23%; left:50%; transform:translateX(-50%); z-index:1;
+    width:min(78vmin, 700px); pointer-events:none;
+    filter:blur(7px); opacity:.5; }
+  body[data-theme="night"] .home-arch{ opacity:.55; filter:blur(5px); }
+  .home-arch svg{ width:100%; color:var(--ink-soft); }
+
+  /* 卡槽：位置由 JS 沿弧线计算 */
+  .slot{ position:absolute; left:0; top:0; width:var(--card-w); aspect-ratio:5/8;
+    margin-left:calc(var(--card-w) / -2); margin-top:calc(var(--card-w) * -.8);
+    transition:transform .6s var(--ease), filter .4s;
+    cursor:pointer; }
+  .slot:hover, .slot.lift{ z-index:20; }
+  .fan.dim .slot:not(:hover):not(.lift){ filter:brightness(.92) saturate(.85); }
+  .lift{ width:100%; height:100%; transition:transform .45s var(--ease); }
+  .slot:hover .lift{ transform:translateY(-2.6vmin) scale(1.07); }
+
+  .card{ width:100%; height:100%; border-radius:9px; overflow:hidden; position:relative;
+    background-color:var(--card-bg);
+    box-shadow:0 2px 6px rgba(30,25,15,.28), 0 18px 34px rgba(30,25,15,.22);
+    border:1px solid var(--card-edge);
+    transition:background-color .9s var(--ease), border-color .9s var(--ease), box-shadow .4s;
+    animation:float 5.5s ease-in-out infinite;
+    animation-delay:var(--d); }
+  .card::before{ content:""; position:absolute; inset:0; border-radius:inherit;
+    background:linear-gradient(165deg, rgba(255,252,240,.32) 0%, rgba(96,80,50,.22) 100%);
+    z-index:0; }
+  .slot:hover .card{ box-shadow:0 4px 10px rgba(30,25,15,.3), 0 30px 50px rgba(30,25,15,.3); }
+  @keyframes float{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
+  .card svg{ position:absolute; inset:0; width:100%; height:100%; display:block;
+    color:var(--card-edge); z-index:1;
+    transition:color .9s var(--ease); }
+  /* 海报卡面 */
+  .cimg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1;
+    user-select:none; -webkit-user-drag:none; }
+  .ctag{ position:absolute; top:6px; left:6px; z-index:2; font-size:10px; letter-spacing:.12em;
+    padding:2px 7px; border-radius:3px; background:rgba(10,8,8,.78); color:#f0e8dc;
+    font-family:'Cormorant Garamond', Georgia, serif; }
+  .cstrip{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding:26px 8px 7px;
+    background:linear-gradient(180deg, transparent, rgba(8,6,6,.82) 68%);
+    display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .cstrip .cfr{ font-size:9.5px; letter-spacing:.18em; color:#f0e8dc; font-weight:600;
+    font-family:'Cormorant Garamond', Georgia, serif; white-space:nowrap; }
+  .cstrip .czh{ font-size:8.5px; letter-spacing:.4em; color:rgba(240,232,220,.75);
+    font-family:'Noto Serif SC', serif; }
+  /* 详情页大卡上的海报元素放大 */
+  .big-card .ctag{ font-size:14px; top:12px; left:12px; padding:3px 10px; }
+  .big-card .cstrip .cfr{ font-size:15px; }
+  .big-card .cstrip .czh{ font-size:12px; letter-spacing:.5em; }
+  body[data-theme="night"] .card svg{ color:#b7a884; }
+
+  /* 首页底部题名 */
+  .caption{ position:absolute; bottom:9%; text-align:center; width:100%;
+    color:var(--ink); pointer-events:none; }  .caption .num{ font-size:13px; letter-spacing:.5em; opacity:.65; margin-bottom:6px; }
+  .caption .name{ font-size:clamp(24px,4vmin,34px); letter-spacing:.34em; font-weight:500;
+    transition:opacity .25s; }
+  .caption .sub{ margin-top:8px; font-size:12px; letter-spacing:.42em; color:var(--ink-soft); }
+  .caption .poem{ margin-top:14px; font-size:13px; font-style:italic; color:var(--ink-soft);
+    letter-spacing:.08em; min-height:1.4em; opacity:.85; transition:opacity .25s; }
+  .caption.swap .name,.caption.swap .poem{ opacity:0; }
+
+  /* 悬停卡牌时，背景显示对应卡面封面（底层大幅水印，位于所有内容之下） */
+  .bg-card{ position:fixed; top:47%; left:50%; z-index:1;
+    width:clamp(240px, 46vmin, 460px); aspect-ratio:5/8;
+    transform:translate(-50%, -50%) scale(.94);
+    opacity:0; pointer-events:none;
+    filter:blur(2px) saturate(.85) drop-shadow(0 30px 60px rgba(30,25,15,.25));
+    transition:opacity .5s var(--ease), transform .6s var(--ease); }
+  .bg-card.show{ opacity:.4; transform:translate(-50%, -50%) scale(1) rotate(-2.5deg); }
+  body[data-theme="night"] .bg-card.show{ opacity:.28; }
+  .bg-card .face{ width:100%; height:100%; border-radius:14px; overflow:hidden;
+    position:relative; background-color:var(--card-bg); border:1px solid var(--card-edge);
+    transition:background-color .9s var(--ease), border-color .9s var(--ease); }
+  .bg-card .face::before{ content:""; position:absolute; inset:0; border-radius:inherit;
+    background:linear-gradient(165deg, rgba(255,252,240,.32) 0%, rgba(96,80,50,.22) 100%); z-index:0; }
+  .bg-card .face svg{ position:absolute; inset:0; width:100%; height:100%; z-index:1;
+    color:var(--card-edge); transition:color .9s var(--ease); }
+
+  .corner-note{ position:absolute; bottom:4.5%; left:34px; font-size:10px; line-height:2;
+    letter-spacing:.35em; color:var(--ink-soft); opacity:.75; text-align:left; pointer-events:none;}
+  .corner-note b{ display:block; letter-spacing:.2em; font-weight:400; }
+
+  /* 中央展开/收拢热区与提示 */
+  .fan-hotspot{ position:absolute; top:50%; left:50%; z-index:4;
+    width:40vmin; height:24vmin; transform:translate(-50%,-50%);
+    border-radius:50%; cursor:pointer; }
+  .spread-hint{ position:absolute; top:calc(50% + 11vmin); left:50%; transform:translateX(-50%);
+    z-index:4; font-size:11px; letter-spacing:.5em; color:var(--ink-soft);
+    opacity:.6; cursor:pointer; animation:pulse 2.8s ease-in-out infinite;
+    transition:opacity .4s; white-space:nowrap; padding:6px 10px 6px 16px; }
+  .spread-hint:hover{ opacity:1; }
+
+  /* ---------- 详情页 ---------- */
+  #detail{ display:grid; place-items:center; visibility:hidden; opacity:0; }
+  #detail.show{ visibility:visible; opacity:1; }
+  #detail > .stage{ position:relative; width:min(92vmin,640px); text-align:center;
+    transform:translateY(-2vmin); }
+  .arch{ width:100%; color:var(--line); opacity:.9; }
+  .arch-wrap{ position:absolute; inset:-9% -4% auto -4%; pointer-events:none; }
+
+  .big-card{ position:relative; width:clamp(190px,32vmin,270px); aspect-ratio:5/8;
+    margin:0 auto; border-radius:14px; overflow:hidden;
+    background-color:var(--card-bg);
+    border:1px solid var(--card-edge);
+    transition:background-color .9s var(--ease), border-color .9s var(--ease);
+    box-shadow:0 6px 18px rgba(20,16,8,.35), 0 40px 80px rgba(20,16,8,.35);
+    cursor:pointer; }
+  .big-card::before{ content:""; position:absolute; inset:0; border-radius:inherit;
+    background:linear-gradient(165deg, rgba(255,252,240,.32) 0%, rgba(96,80,50,.22) 100%);
+    z-index:0; }
+  .big-card svg{ position:absolute; inset:0; width:100%; height:100%; z-index:1;
+    color:var(--card-edge); transition:color .9s var(--ease); }
+  body[data-theme="night"] .big-card svg{ color:#b7a884; }
+  .big-card::after{ content:""; position:absolute; inset:0; border-radius:14px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14); pointer-events:none; }
+
+  .d-num{ margin-top:34px; font-size:13px; letter-spacing:.55em; color:var(--ink-soft); }
+  .d-name{ margin-top:10px; font-size:clamp(26px,4.6vmin,40px); letter-spacing:.3em;
+    font-weight:600; color:var(--ink); }
+  .d-zh{ margin-top:10px; font-size:14px; letter-spacing:.6em; color:var(--ink-soft); }
+  .d-desc{ margin:22px auto 0; max-width:36em; font-size:14.5px; line-height:2.05;
+    color:var(--ink-soft); letter-spacing:.06em; padding:0 18px; }
+  .d-hint{ margin-top:26px; font-size:11px; letter-spacing:.4em; color:var(--ink-soft);
+    animation:pulse 2.6s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:.45;} 50%{ opacity:1;} }
+
+  /* ---------- 水波纹转场 ---------- */
+  #rippleLayer{ position:fixed; inset:0; z-index:50; pointer-events:none; }
+  .wipeLayer{ position:fixed; inset:0; z-index:3; pointer-events:none; } /* 巨浪层：浮于背景之上、内容之下 */
+  .ripple{ position:absolute; width:24px; height:24px; border-radius:50%;
+    transform:translate(-50%,-50%) scale(0); will-change:transform,opacity; }
+  .ripple.fill{ background:var(--rp, #e7dfcc); }
+  .ripple.ring{ border:1.5px solid var(--rp, #e7dfcc); opacity:.9; }
+
+  body.shaking .view, body.shaking header{ animation:jitter .5s linear; }
+  @keyframes jitter{
+    0%,100%{ transform:translate(0,0);} 12%{ transform:translate(1.6px,-1px);}
+    25%{ transform:translate(-1.8px,1.2px);} 38%{ transform:translate(1.4px,1.6px);}
+    52%{ transform:translate(-1.5px,-1.4px);} 66%{ transform:translate(1px,1.2px);}
+    80%{ transform:translate(-.8px,-.6px);} }
+
+  @media (max-width:640px){
+    header{ padding:20px 20px; }
+    .corner-note{ display:none; }
+    :root{ --radius: clamp(170px, 40vmin, 300px); }
+    .d-desc{ font-size:13px; }
+  }
+
+  /* 昼夜切换时文字颜色平滑过渡 */
+  .brand h1,.brand p,.caption,.caption .num,.caption .name,.caption .sub,.caption .poem,
+  .corner-note,.d-num,.d-name,.d-zh,.d-desc,.d-hint,.arch,#themeBtn{
+    transition:color .9s var(--ease), border-color .9s var(--ease);
+  }
+</style>
+</head>
+<body data-theme="day">
+
+<div id="bg">
+  <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+</div>
+<div class="vignette"></div>
+<div class="bg-card" id="bgCard"><div class="face" id="bgCardFace"></div></div>
+<div class="home-arch" id="homeArch">
+  <svg viewBox="0 0 600 460" fill="none" stroke="currentColor" stroke-width="1.3">
+    <path d="M110 440 V210 A190 190 0 0 1 490 210 V440"/>
+    <path d="M128 440 V212 A172 172 0 0 1 472 212 V440" opacity=".55"/>
+    <rect x="96"  y="196" width="40" height="16" rx="3"/>
+    <rect x="464" y="196" width="40" height="16" rx="3"/>
+    <path d="M106 212 V432 M118 212 V432 M130 212 V432" opacity=".5"/>
+    <path d="M470 212 V432 M482 212 V432 M494 212 V432" opacity=".5"/>
+    <rect x="94"  y="432" width="44" height="12" rx="3"/>
+    <rect x="462" y="432" width="44" height="12" rx="3"/>
+    <path d="M292 26 h16 l4 18 h-24 Z"/>
+    <path d="M300 44 v10" opacity=".7"/>
+  </svg>
+</div>
+
+<header>
+  <div class="brand">
+    <h1>AURELIA</h1>
+    <p>where every card keeps a fragment of the sky</p>
+  </div>
+  <button id="themeBtn" title="昼夜切换" aria-label="切换昼夜主题">
+    <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+      <circle cx="12" cy="12" r="4.2"/>
+      <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/>
+    </svg>
+    <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" style="display:none">
+      <path d="M20 13.2A8.2 8.2 0 1 1 10.8 4 6.6 6.6 0 0 0 20 13.2Z"/>
+      <path d="M17.5 4.5v2M16.5 5.5h2"/>
+    </svg>
+  </button>
+</header>
+
+<!-- ============ 首页：扇形卡牌 ============ -->
+<section class="view" id="home">
+  <div class="fan">
+    <div class="fan-sway" id="fanSway"></div>
+  </div>
+  <div class="fan-hotspot" id="fanHotspot" title="收拢 / 展开牌阵"></div>
+  <div class="spread-hint" id="spreadHint">点 击 中 央 · 收 拢 牌 阵</div>
+
+  <div class="caption" id="caption">
+    <div class="num" id="capNum">0</div>
+    <div class="name" id="capName">LE MAT</div>
+    <div class="sub" id="capZh">愚 者</div>
+    <div class="poem" id="capPoem"></div>
+  </div>
+
+  <div class="corner-note">
+    <b>影 之 牌 阵 · 全 八 张</b>
+    点击中央 · 展开牌阵 / 收拢<br>
+    点击卡牌 · 进入它的页面<br>
+    再次点击 · 回到这片天空
+  </div>
+</section>
+
+<!-- ============ 详情页 ============ -->
+<section class="view" id="detail">
+  <div class="stage">
+    <div class="arch-wrap">
+      <svg class="arch" viewBox="0 0 600 460" fill="none" stroke="currentColor" stroke-width="1.3">
+        <!-- 拱门 -->
+        <path d="M110 440 V210 A190 190 0 0 1 490 210 V440"/>
+        <path d="M128 440 V212 A172 172 0 0 1 472 212 V440" opacity=".55"/>
+        <!-- 柱头 -->
+        <rect x="96"  y="196" width="40" height="16" rx="3"/>
+        <rect x="464" y="196" width="40" height="16" rx="3"/>
+        <!-- 柱身凹槽 -->
+        <path d="M106 212 V432 M118 212 V432 M130 212 V432" opacity=".5"/>
+        <path d="M470 212 V432 M482 212 V432 M494 212 V432" opacity=".5"/>
+        <!-- 柱础 -->
+        <rect x="94"  y="432" width="44" height="12" rx="3"/>
+        <rect x="462" y="432" width="44" height="12" rx="3"/>
+        <!-- 拱顶石与饰线 -->
+        <path d="M292 26 h16 l4 18 h-24 Z"/>
+        <path d="M300 44 v10" opacity=".7"/>
+        <!-- 放射细线 -->
+        <g opacity=".35" stroke-width=".8">
+          <path d="M300 300 L300 150"/><path d="M300 300 L210 170"/><path d="M300 300 L390 170"/>
+          <path d="M300 300 L160 240"/><path d="M300 300 L440 240"/>
+        </g>
+        <!-- 顶部星 -->
+        <path d="M300 96 l3.2 8.6 8.6 3.2 -8.6 3.2 -3.2 8.6 -3.2 -8.6 -8.6 -3.2 8.6 -3.2 Z" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <div class="big-card" id="bigCard" title="点击返回首页"></div>
+
+    <div class="d-num"  id="dNum">0</div>
+    <div class="d-name" id="dName">LE MAT</div>
+    <div class="d-zh"   id="dZh">愚 者</div>
+    <p class="d-desc"   id="dDesc"></p>
+    <div class="d-hint">再 点 击 一 次 · 回 到 首 页</div>
+  </div>
+</section>
+
+<div id="rippleLayer"></div>
+
+<script>
+/* ================= 数据：8 张电影海报卡 ================= */
+const CARDS = [
+  { n:'01', img:'img/p1.jpg', fr:'RESILIENCE', zh:'韧性',
+    line:'Some days thriving, other days just getting out of bed.',
+    desc:'红黑之间的一条斑马线，一个人正在过街。有些日子是向上生长，有些日子只是按时起床——两者都算数，合起来便是生活的节拍。',
+  },
+  { n:'02', img:'img/p2.jpg', fr:'NO ESCAPE', zh:'无处可逃',
+    line:'Outrun the enemy, wherever he hides.',
+    desc:'仰望两栋楼宇之间的天空，两个身影从红幕上掠过。追逐的从来不是别人，而是那个你一直想甩掉的自己。',
+  },
+  { n:'03', img:'img/p3.jpg', fr:'VERTIGO', zh:'眩晕',
+    line:'The higher you look, the harder you fall.',
+    desc:'红色的阶梯螺旋而下，白色窗口里的人影俯瞰深渊。希区柯克式的眩晕，是站在高处忽然明白：让你失重的不是高度，是心。',
+  },
+  { n:'04', img:'img/p4.jpg', fr:'SE7EN', zh:'七宗罪',
+    line:'What sins haunt the alley tonight?',
+    desc:'仰拍的城市裂缝里，一道血色十字压在两个侦探头上。这座城市藏了七宗罪，而第八宗，是你对它的视而不见。',
+  },
+  { n:'05', img:'img/p5.jpg', fr:'GIA', zh:'吉娅',
+    line:'This is life, not heaven — you don\'t have to be perfect.',
+    desc:'巨大的红色字母压下来，黑白面孔从字缝里望出去。这是生活，不是天堂——你不必完美，就已经足够醒目。',
+  },
+  { n:'06', img:'img/p6.jpg', fr:'DR. STRANGELOVE', zh:'奇爱博士',
+    line:'How I learned to stop worrying and love the bomb.',
+    desc:'骑在炸弹上落下的女人，电话线缠绕着整个世界。库布里克的黑色幽默：末日不可怕，可怕的是我们笑着按下按钮。',
+  },
+  { n:'07', img:'img/p7.jpg', fr:'THE COMMUTER', zh:'通勤者',
+    line:'They\'re watching every move you make.',
+    desc:'巨大的标题斜插下来，铁轨尽头一个提包的身影。每天同一条线路、同一班车——直到某天，车厢里多了一个注视你的人。',
+  },
+  { n:'08', img:'img/p8.jpg', fr:'WEST SIDE STORY', zh:'西区故事',
+    line:'Could there be a love, against the streets?',
+    desc:'红墙前的一个黑色剪影，影子长过整条街。街头是刀与帮派，巷尾是歌与爱情——西区的故事，从未落幕。',
+  },
+];
+
+/* ================= 卡面绘制 ================= */
+function symbolSVG(kind, uid){
+  const s = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"';
+  let g = '';
+  switch(kind){
+    case 'fool':    // 羽毛与游星
+      g = `<path d="M50 92 C44 76 46 58 56 44 C58 56 56 74 52 92 Z" ${s}/>
+           <path d="M53 46 C58 40 64 38 70 40 C66 46 60 48 54 47" ${s}/>
+           <path d="M50 92 l-6 10 M50 92 l7 9" ${s}/>
+           <circle cx="72" cy="30" r="3.4" ${s}/>
+           <path d="M72 22v3.4M72 34.6V38M64 30h3.4M76.6 30H80" ${s}/>`;
+      break;
+    case 'mage':    // 无限符号 + 光环
+      g = `<path d="M28 56 C28 46 42 46 50 56 C58 66 72 66 72 56 C72 46 58 46 50 56 C42 66 28 66 28 56 Z" ${s} stroke-width="1.6"/>
+           <path d="M50 26 a5.5 5.5 0 0 1 0 11 a5.5 5.5 0 0 1 0 -11" ${s}/>
+           <path d="M50 37v9" ${s}/>`;
+      break;
+    case 'moon':    // 新月与双柱
+      g = `<path d="M58 40 a17 17 0 1 0 8 26 a13.5 13.5 0 0 1 -8 -26 Z" ${s}/>
+           <path d="M30 44v44M42 44v44" ${s} opacity=".8"/>
+           <path d="M27 44h18M27 88h18" ${s} opacity=".8"/>`;
+      break;
+    case 'crown':   // 星冠与麦穗
+      g = `<path d="M30 72 L36 44 L46 60 L50 40 L54 60 L64 44 L70 72 Z" ${s}/>
+           <path d="M30 72h40" ${s}/>
+           <circle cx="50" cy="30" r="2.6" ${s}/>
+           <path d="M34 84 c4-6 10-6 14 0 c4 6 10 6 14 0" ${s} opacity=".8"/>`;
+      break;
+    case 'scepter': // 权杖与方印
+      g = `<path d="M50 88 V34" ${s}/>
+           <circle cx="50" cy="28" r="6.5" ${s}/>
+           <path d="M50 21.5v-4" ${s}/>
+           <rect x="62" y="52" width="18" height="18" rx="2" ${s} opacity=".85"/>
+           <path d="M66.5 56.5h9M66.5 61h9M66.5 65.5h9" ${s} opacity=".5"/>
+           <path d="M42 88h16" ${s}/>`;
+      break;
+    case 'keys':    // 交叉钥匙
+      g = `<path d="M38 34 L60 74 M60 74 l4 8 -8 -2 M56 66 l6 -3" ${s}/>
+           <circle cx="35.5" cy="29" r="6" ${s}/>
+           <path d="M62 34 L40 74 M40 74 l-4 8 8 -2 M44 66 l-6 -3" ${s}/>
+           <circle cx="64.5" cy="29" r="6" ${s}/>`;
+      break;
+    case 'rose':    // 玫瑰
+      g = `<circle cx="50" cy="50" r="9" ${s}/>
+           <path d="M50 41 a9 9 0 0 1 8 13 M50 59 a9 9 0 0 1 -8 -13" ${s} opacity=".8"/>
+           <circle cx="50" cy="50" r="15.5" ${s} opacity=".55"/>
+           <path d="M50 66 v22 M50 78 c-6-2-9-6-9-11 M50 74 c6-2 9-6 9-11" ${s}/>
+           <path d="M41 90 c3 3 15 3 18 0" ${s} opacity=".7"/>`;
+      break;
+    case 'star8':   // 八芒星轮
+      g = `<circle cx="50" cy="54" r="17" ${s}/>
+           <circle cx="50" cy="54" r="7" ${s} opacity=".7"/>
+           <path d="M50 31v-9M50 86v-9M27 54h-9M82 54h-9M34 38l-6-6M72 70l-6-6M66 38l6-6M34 70l-6 6" ${s}/>`;
+      break;
+    case 'scales':  // 天平
+      g = `<path d="M50 34 v46 M38 86h24" ${s}/>
+           <path d="M28 44 h44" ${s}/>
+           <path d="M28 44 l-8 16 a9 7 0 0 0 16 0 Z" ${s} opacity=".85"/>
+           <path d="M72 44 l-8 16 a9 7 0 0 0 16 0 Z" ${s} opacity=".85"/>
+           <circle cx="50" cy="30" r="3.4" ${s}/>`;
+      break;
+  }
+  return `<g>${g}</g>`;
+}
+
+function cardFace(c, uid){
+  if (c.img){
+    return `<img class="cimg" src="${c.img}" alt="${c.fr}" draggable="false">
+      <div class="ctag">${c.n}</div>
+      <div class="cstrip"><span class="cfr">${c.fr}</span><span class="czh">${c.zh}</span></div>`;
+  }
+  return `<svg viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice">
+    <rect x="4" y="4" width="92" height="152" rx="6" fill="none" stroke="currentColor" stroke-width="1.1"/>
+    <rect x="7.5" y="7.5" width="85" height="145" rx="4" fill="none" stroke="currentColor" stroke-width=".5" opacity=".65"/>
+    <circle cx="10.5" cy="10.5" r="1.1" fill="currentColor"/><circle cx="89.5" cy="10.5" r="1.1" fill="currentColor"/>
+    <circle cx="10.5" cy="149.5" r="1.1" fill="currentColor"/><circle cx="89.5" cy="149.5" r="1.1" fill="currentColor"/>
+    <text x="50" y="21" text-anchor="middle" font-size="9" letter-spacing="2" fill="currentColor"
+      font-family="Cormorant Garamond, Georgia, serif">${c.n}</text>
+    <!-- 光晕与放射线 -->
+    <circle cx="50" cy="57" r="24" fill="none" stroke="currentColor" stroke-width=".45" stroke-dasharray="1.5 3.2" opacity=".6"/>
+    <g opacity=".5" stroke="currentColor" stroke-width=".35">
+      <path d="M50 25 V14 M31 32 l-6 -7 M69 32 l6 -7 M24 57 H13 M87 57 H76"/>
+    </g>
+    <g transform="translate(0,7)">${symbolSVG(c.sym, uid)}</g>
+    <path d="M26 120 h48" stroke="currentColor" stroke-width=".5" opacity=".55"/>
+    <text x="50" y="133" text-anchor="middle" font-size="6.4" letter-spacing="2.6" fill="currentColor"
+      font-family="Cormorant Garamond, Georgia, serif">${c.fr}</text>
+    <text x="50" y="144" text-anchor="middle" font-size="5.6" letter-spacing="3.4" fill="currentColor" opacity=".8"
+      font-family="'Noto Serif SC', serif">${c.zh}</text>
+  </svg>`;
+}
+
+/* ================= 首页扇形渲染 ================= */
+const fanSway = document.getElementById('fanSway');
+CARDS.forEach((c, i)=>{
+  const slot = document.createElement('div');
+  slot.className = 'slot';
+  slot.style.zIndex = 5 + i;
+  slot.innerHTML = `<div class="lift"><div class="card" style="--d:${(i*0.45).toFixed(2)}s">${cardFace(c, i)}</div></div>`;
+  slot.addEventListener('mouseenter', ()=> showCaption(i));
+  slot.addEventListener('click', e => enterDetail(i, e.clientX, e.clientY));
+  fanSway.appendChild(slot);
+});
+const slots = [...document.querySelectorAll('.slot')];
+const fan = document.querySelector('.fan');
+
+/* ================= 布局：宽弧铺开（视频默认） / 紧凑扇形（收拢） ================= */
+const fanHotspot = document.getElementById('fanHotspot');
+const spreadHint = document.getElementById('spreadHint');
+let spread = true;   // 默认即视频中的宽弧铺开状态
+
+function layout(){
+  slots.forEach((s, i)=>{
+    if (spread){
+      /* 宽弧：两端高、中间低，微微外倾 —— 复现视频首页 */
+      const span = Math.min(innerWidth * 0.94, 1160);
+      const step = span / 7;
+      const x = (i - 3.5) * step;
+      const t = (i - 3.5) / 3.5;
+      const y = span * 0.075 * (1 - t * t);          // 端点高、中心低
+      const rot = (i - 3.5) * 3.2;                    // 外倾
+      s.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
+    } else {
+      /* 紧凑扇形 */
+      const R = Math.min(Math.max(innerHeight * 0.42, 240), 420);
+      const a = -35 + i * 10;
+      s.style.transform = `rotate(${a}deg) translateY(${-R}px)`;
+    }
+  });
+}
+function toggleSpread(){
+  spread = !spread;
+  layout();
+  spreadHint.textContent = spread ? '点 击 中 央 · 收 拢 牌 阵' : '点 击 中 央 · 展 开 牌 阵';
+}
+fanHotspot.addEventListener('click', toggleSpread);
+spreadHint.addEventListener('click', toggleSpread);
+addEventListener('resize', layout);
+layout();
+
+const capNum = document.getElementById('capNum'),
+      capName = document.getElementById('capName'),
+      capZh = document.getElementById('capZh'),
+      capPoem = document.getElementById('capPoem'),
+      caption = document.getElementById('caption'),
+      capPreview = document.getElementById('bgCard'),
+      capPreviewFace = document.getElementById('bgCardFace');
+/* 背景水印保持显示：直到悬停到下一张不同的牌才切换，不再自动消失 */
+function showCaption(i){
+  const c = CARDS[i];
+  const faceHTML = cardFace(c, 'pv'+i);
+  if (capPreview.classList.contains('show') && capPreviewFace.innerHTML !== faceHTML){
+    /* 已有背景水印且切换到不同卡面：先淡出旧图，再淡入新图 */
+    capPreview.style.opacity = '0';
+    setTimeout(()=>{
+      capPreviewFace.innerHTML = faceHTML;
+      capPreview.style.opacity = '';
+    }, 260);
+  } else if (!capPreview.classList.contains('show')){
+    capPreviewFace.innerHTML = faceHTML;
+    capPreview.classList.add('show');
+  }
+  caption.classList.add('swap');
+  setTimeout(()=>{
+    capNum.textContent = c.n;
+    capName.textContent = c.fr;
+    capZh.textContent = c.zh.split('').join(' ');
+    capPoem.textContent = `“ ${c.line} ”`;
+    caption.classList.remove('swap');
+  }, 180);
+}
+showCaption(0);
+
+/* ================= 详情页 ================= */
+const dNum=document.getElementById('dNum'), dName=document.getElementById('dName'),
+      dZh=document.getElementById('dZh'), dDesc=document.getElementById('dDesc'),
+      bigCard=document.getElementById('bigCard'),
+      detail=document.getElementById('detail'), home=document.getElementById('home');
+let current = -1, busy = false;
+
+function fillDetail(i){
+  const c = CARDS[i];
+  bigCard.innerHTML = cardFace(c, 'big'+i);
+  dNum.textContent = c.n;
+  dName.textContent = c.fr;
+  dZh.textContent = c.zh.split('').join(' ');
+  dDesc.textContent = c.desc;
+}
+
+/* ================= 水波纹转场 ================= */
+function ripple(x, y, fillColor, onCovered, onDone){
+  const layer = document.getElementById('rippleLayer');
+  const vw = innerWidth, vh = innerHeight;
+  const dist = Math.hypot(Math.max(x, vw-x), Math.max(y, vh-y)) + 30;
+  const mk = (cls, delay, dur)=>{
+    const r = document.createElement('div');
+    r.className = 'ripple ' + cls;
+    r.style.left = x+'px'; r.style.top = y+'px';
+    r.style.setProperty('--rp', fillColor);
+    r.style.transition = `transform ${dur}ms cubic-bezier(.4,.6,.35,1) ${delay}ms, opacity 450ms ease ${delay+Math.max(dur-450,0)}ms`;
+    layer.appendChild(r);
+    requestAnimationFrame(()=> requestAnimationFrame(()=>{
+      r.style.transform = `translate(-50%,-50%) scale(${(dist*2)/24})`;
+    }));
+    return r;
+  };
+  const fill = mk('fill', 0, 620);
+  const ring1 = mk('ring', 60, 640);
+  const ring2 = mk('ring', 140, 660);
+
+  document.body.classList.add('shaking');
+  setTimeout(()=> document.body.classList.remove('shaking'), 520);
+
+  setTimeout(()=>{ onCovered && onCovered(); }, 640);          // 完全遮住画面时切换视图
+  setTimeout(()=>{
+    [fill, ring1, ring2].forEach(r=>{ r.style.opacity = 0; });
+    setTimeout(()=>{ layer.innerHTML=''; onDone && onDone(); }, 500);
+  }, 900);
+}
+
+/* 点击卡牌 → 进入详情 */
+function enterDetail(i, x, y){
+  if (busy) return; busy = true; current = i;
+  fillDetail(i);
+  const theme = getComputedStyle(document.body).getPropertyValue('--bg2').trim();
+  ripple(x, y, theme,
+    ()=>{                       // 画面被遮住：切换
+      home.style.visibility = 'hidden';
+      detail.classList.add('show');
+      fan.classList.remove('dim');
+      slots.forEach(s=> s.classList.remove('lift'));
+    },
+    ()=>{ busy = false; });
+}
+
+/* 详情页任意点击 → 返回首页 */
+detail.addEventListener('click', e=>{
+  if (busy || current < 0) return; busy = true;
+  const theme = getComputedStyle(document.body).getPropertyValue('--bg2').trim();
+  ripple(e.clientX, e.clientY, theme,
+    ()=>{
+      detail.classList.remove('show');
+      home.style.visibility = 'visible';
+      current = -1;
+    },
+    ()=>{ busy = false; });
+});
+document.addEventListener('keydown', e=>{
+  if (e.key === 'Escape' && detail.classList.contains('show') && !busy){
+    detail.click();
+  }
+});
+
+/* ================= 昼夜切换（水波纹样式） ================= */
+const themeBtn = document.getElementById('themeBtn');
+const iconSun = document.getElementById('iconSun'), iconMoon = document.getElementById('iconMoon');
+themeBtn.addEventListener('click', e=>{
+  if (busy) return; busy = true;
+  e.stopPropagation();
+  const r = themeBtn.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  themeWipe(cx, cy, document.body.dataset.theme === 'day' ? 'night' : 'day');
+});
+
+/* ================= 昼夜切换：巨浪吞没式水波纹 =================
+   与视频一致：一个边缘持续抖动（水波纹）的巨型圆盘从按钮处涌出，
+   逐渐吞没整屏，随后圆盘淡出、露出新主题。 */
+let wipeSeq = 0;
+function themeWipe(cx, cy, next){
+  const R = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy)) * 1.55 + 80;
+  const bg = next === 'day' ? '#e7dfcc' : '#12151f';
+  const id = 'wavyF' + (++wipeSeq);
+
+  const layer = document.createElement('div');
+  layer.className = 'wipeLayer';
+  layer.innerHTML = `
+  <svg width="100%" height="100%">
+    <defs>
+      <filter id="${id}" x="-40%" y="-40%" width="180%" height="180%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.011 0.019" numOctaves="2" seed="3" result="n">
+          <animate attributeName="seed" values="1;4;7;9;5;1" dur="0.5s" repeatCount="indefinite"/>
+        </feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G">
+          <animate attributeName="scale" values="26;56;26" dur="0.5s" repeatCount="indefinite"/>
+        </feDisplacementMap>
+      </filter>
+    </defs>
+    <!-- 主体：抖动边缘的巨浪圆盘 -->
+    <circle cx="${cx}" cy="${cy}" r="0" fill="${bg}" filter="url(#${id})">
+      <animate attributeName="r" from="0" to="${R}" dur="1.05s"
+               calcMode="spline" keyTimes="0;1" keySplines=".45 .05 .3 1" fill="freeze"/>
+    </circle>
+    <!-- 圆盘前沿的一圈亮环，增强水感 -->
+    <circle cx="${cx}" cy="${cy}" r="0" fill="none" stroke="${bg}" stroke-width="3" opacity=".55" filter="url(#${id})">
+      <animate attributeName="r" from="0" to="${R * 1.06}" dur="1.1s"
+               calcMode="spline" keyTimes="0;1" keySplines=".45 .05 .3 1" fill="freeze"/>
+    </circle>
+  </svg>`;
+  document.body.appendChild(layer);
+
+  // 抖动（配合视频中的“抖动”感）
+  document.body.classList.add('shaking');
+  setTimeout(()=> document.body.classList.remove('shaking'), 520);
+
+  // 圆盘吞没画面后切换主题，再让圆盘淡出露出新世界
+  setTimeout(()=>{
+    document.body.dataset.theme = next;
+    iconSun.style.display  = next === 'day' ? '' : 'none';
+    iconMoon.style.display = next === 'night' ? '' : 'none';
+  }, 980);
+  setTimeout(()=>{
+    layer.style.transition = 'opacity .55s ease';
+    layer.style.opacity = '0';
+    setTimeout(()=>{ layer.remove(); busy = false; }, 600);
+  }, 1150);
+}
+</script>
+</body>
+</html>
