@@ -502,10 +502,11 @@ function layout(){
       const rot = (i - 3.5) * 3.2;                    // 外倾
       s.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
     } else {
-      /* 紧凑扇形 */
+      /* 紧凑扇形：整体下移，让牌阵位于页面中央略偏上 */
       const R = Math.min(Math.max(innerHeight * 0.42, 240), 420);
       const a = -35 + i * 10;
-      s.style.transform = `rotate(${a}deg) translateY(${-R}px)`;
+      const dy = R + innerHeight * 0.09;
+      s.style.transform = `translate(0px, ${dy}px) rotate(${a}deg) translateY(${-R}px)`;
     }
   });
 }
