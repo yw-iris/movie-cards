@@ -320,6 +320,13 @@
     color:var(--ink-soft); padding-left:1.1em; position:relative; }
   .d-mod-i::before{ content:""; position:absolute; left:0; top:.85em;
     width:4px; height:4px; border-radius:50%; background:rgba(200,80,58,.7); }
+  /* 详情页外链按钮（话术/板评/冠名） */
+  .d-link{ display:inline-block; margin:14px 12px 0 0; padding:9px 20px;
+    font-size:13px; letter-spacing:.3em; color:var(--accent,#c8503a); text-decoration:none;
+    border:1px solid rgba(200,80,58,.5); border-radius:30px; background:rgba(200,80,58,.07);
+    cursor:pointer; transition:.25s var(--ease); }
+  .d-link:hover{ color:#fff; background:rgba(200,80,58,.85); border-color:transparent;
+    box-shadow:0 0 16px rgba(255,60,30,.55); }
   .d-hint{ margin-top:30px; font-size:11px; letter-spacing:.4em; color:var(--ink-soft);
     animation:pulse 2.6s ease-in-out infinite; }
   @keyframes pulse{ 0%,100%{ opacity:.45;} 50%{ opacity:1;} }
@@ -519,6 +526,14 @@ const CARDS = [
     modules:[
       { t:'话术展示', items:[
         '@这首歌写给you: 你不是凌冽寒雪 你是我世世的长春',
+      ], links:[
+        { label:'话 术 展 示 ↗', url:'https://www.kdocs.cn/l/ckxpd4Gm7Fao' },
+      ]},
+      { t:'板 评 采 纳', links:[
+        { label:'板 评 采 纳 ↗', url:'https://www.kdocs.cn/l/crrgLd2ysBt1' },
+      ]},
+      { t:'冠 名 展 示', links:[
+        { label:'冠 名 展 示 ↗', url:'https://www.kdocs.cn/l/cq7eYznwZmG6' },
       ]},
     ],
   },
@@ -789,11 +804,21 @@ function fillDetail(i){
     h.className = 'd-mod-t';
     h.textContent = m.t;
     blk.appendChild(h);
-    m.items.forEach(it=>{
+    (m.items || []).forEach(it=>{
       const p = document.createElement('div');
       p.className = 'd-mod-i';
       p.textContent = it;
       blk.appendChild(p);
+    });
+    (m.links || []).forEach(lk=>{
+      const a = document.createElement('a');
+      a.className = 'd-link';
+      a.textContent = lk.label;
+      a.href = lk.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.addEventListener('click', e=> e.stopPropagation());   // 点链接不触发详情页返回
+      blk.appendChild(a);
     });
     dModules.appendChild(blk);
   });
@@ -849,6 +874,7 @@ function enterDetail(i, x, y){
 
 /* 详情页任意点击 → 返回首页 */
 detail.addEventListener('click', e=>{
+  if (e.target.closest('a')) return;          // 点外链不返回首页
   if (busy || current < 0) return; busy = true;
   const theme = getComputedStyle(document.body).getPropertyValue('--bg2').trim();
   ripple(e.clientX, e.clientY, theme,
